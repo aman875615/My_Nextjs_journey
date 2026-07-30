@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import connectDb from "./db";
 import User from "@/model/user.model"
 import bycrypt from "bcryptjs"
+import process from "process";
 
 const authOptions:NextAuthOptions = {
 providers: [ 
@@ -39,14 +40,35 @@ providers: [
      })
 ],
 callbacks: {
+    async jwt({ token, user }) {   
+        if(user){
+            token.id = user.id;
+            token.name = user.name;
+            token.email = user.email;
+            token.image = user.image;
+        }
+        return token;
+    },
+    session({ session, token }) {
+        if(session.user){
+            session.user.id = token.id as string
+            session.user.name = token.name;
+            session.user.email = token.email;
+            session.user.image = token.image as string;
+        }
+        return session;
+    }
 
 },
 session: {
-
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
 },
 pages:{
+    signIn: "/login",
+    error: "/login"
 
 },
-secret:"your-secret-key"
+secret:process.env.NEXT_AUTH_SECRET,
 }
 export default authOptions;
